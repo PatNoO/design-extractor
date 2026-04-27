@@ -1,5 +1,7 @@
 # design-extractor
 
+> **Status: Early Beta** — core extraction works, but the skill is still being tested across different frameworks and project structures. Expect rough edges. Feedback and bug reports are welcome via [Issues](../../issues).
+
 **A Claude Code skill that reads your codebase and generates a ready-to-run Figma script — tokens, components and frames in a single paste.**
 
 ---
@@ -39,6 +41,8 @@ The skill runs in four stages:
 
 ## Installation
 
+Copy the skill into your project:
+
 ```bash
 # Inside any project where you want to use it
 mkdir -p .claude/skills
@@ -47,17 +51,70 @@ cp -r design-extractor .claude/skills/
 
 Once the folder is in place, Claude Code picks it up automatically.
 
+## Quick Start
+
+1. **Install** the skill into your project (see Installation above)
+2. **Ask Claude Code**:
+   > "Generate figma-import.js for this project"
+3. Claude Code will:
+   - Scan your codebase
+   - Extract design tokens, components, and page layouts
+   - Generate a ready-to-run `figma-import.js` script
+4. **Run in Figma**:
+   - Open Figma → Plugins → Development → Open Console
+   - Paste the script → Press Enter
+   - Your entire design system appears automatically ✨
+
+## Skill File Structure
+
+The skill includes:
+
+| File/Folder | Purpose |
+|---|---|
+| `SKILL.md` | Main skill definition with all extraction rules and Figma API constraints |
+| `references/` | Detailed guides for patterns, templates, and generation logic |
+| `scripts/extract.py` | Standalone Python utility for pre-extracting tokens |
+| `setup-extractor.md` | Workflow for adapting the skill to a new codebase |
+
 ## Usage
 
-Tell Claude Code:
+### For Projects Using This Skill
+
+Simply tell Claude Code what you need:
 
 > "Generate figma-import.js for this project"
 
-Claude Code reads the skill, scans the repo and delivers the script. No flags, no configuration needed.
+Or trigger the skill directly with the slash command:
+
+> `/design-extractor`
+
+Claude Code reads the skill, scans your repo and delivers the script. No flags, no configuration needed.
+
+### For Customizing the Skill
+
+The skill works out of the box, but for best results you can calibrate it to your specific framework and styling approach. This is a one-time setup — just tell Claude Code:
+
+> "Run setup-extractor.md for this project"
+
+Claude Code will automatically:
+1. Scan your project (framework, styling, component structure)
+2. Write the results into `SKILL.md` as a "Local Project Formatting" section
+3. Use those rules for all future extractions — no further action needed
+
+**You don't edit anything manually.** The setup workflow handles it all.
 
 ---
 
-## Technical Deep Dive
+## What Gets Customized
+
+- **Framework** (React, Vue, Svelte, Next.js, SwiftUI, etc.)
+- **Styling approach** (Tailwind, CSS Modules, Styled Components, CSS-in-JS)
+- **Component folder structure** (where to scan for components)
+- **Code generation rules** (naming conventions, file format, output structure)
+
+---
+
+## Key Features
 
 ### Framework detection
 

@@ -32,8 +32,21 @@ design-system-summary.md
 *.swo
 *~
 
+# Private skills — allow workflow skills
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/design-extractor/
+!.claude/skills/git-commit/
+!.claude/skills/git-push/
+!.claude/skills/git-ship/
+!.claude/skills/create-ticket/
+
 # Node (if ever needed)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local tickets — never push
+.tickets/
