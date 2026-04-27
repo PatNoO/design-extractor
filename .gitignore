@@ -32,8 +32,15 @@ design-system-summary.md
 *.swo
 *~
 
+# Claude private config — keep out of git
+.claude/settings.local.json
+.claude/memory/
+
 # Node (if ever needed)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local tickets — never push
+Ticket.md
