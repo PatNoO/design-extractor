@@ -190,7 +190,7 @@ async function createTokenStyles() {
 async function createComponents() {
   const page = figma.createPage();
   page.name = "🧩 Components";
-  figma.currentPage = page;
+  await figma.setCurrentPageAsync(page);
 
   let x = 40;
   for (const comp of components) {
@@ -226,7 +226,7 @@ async function buildFrames() {
   for (const pageData of pages) {
     const figmaPage = figma.createPage();
     figmaPage.name = pageData.name;
-    figma.currentPage = figmaPage;
+    await figma.setCurrentPageAsync(figmaPage);
 
     // Desktop frame
     const desktop = figma.createFrame();
@@ -296,15 +296,17 @@ async function buildFrames() {
 }
 
 // ---- RUN EVERYTHING ----
-(async () => {
+// Top-level await — no IIFE wrapper (console crashes with async IIFE)
+try {
   console.log("🚀 Starting design import...");
   await loadFonts();
   await createTokenStyles();
   await createComponents();
   await buildFrames();
-  figma.notify("🎉 Entire design imported!", { timeout: 5000 });
-  figma.closePlugin();
-})();
+  console.log("🎉 Entire design imported!");
+} catch (err) {
+  console.error("❌ ERROR:", err);
+}
 ```
 
 ---
