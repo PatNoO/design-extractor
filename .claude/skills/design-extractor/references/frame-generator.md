@@ -189,7 +189,9 @@ async function createTokenStyles() {
     style.name = `Typography/${name}`;
     style.fontName = { family: props.family, style: weightToStyle(props.weight) };
     style.fontSize = props.size;
-    style.lineHeight = { unit: "MULTIPLIER", value: props.lineHeight };
+    // MULTIPLIER is invalid — convert to PERCENT (e.g. 1.5 → 150)
+    const lhValue = props.lineHeight < 10 ? props.lineHeight * 100 : props.lineHeight;
+    style.lineHeight = { unit: "PERCENT", value: lhValue };
   }
   console.log("✅ Token styles created");
 }
