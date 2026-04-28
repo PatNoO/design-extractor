@@ -142,6 +142,25 @@ Structure for `figma-import.js`:
 // Run in: Figma → Plugins → Development → Open Console
 
 const tokens = { colors: {...}, typography: {...}, spacing: {...} };
+function solidColor(hex) { ... }
+
+async function loadFonts() {
+  // Collect every unique family+style from tokens.typography, then load them all
+  const toLoad = new Set();
+  for (const t of Object.values(tokens.typography)) {
+    toLoad.add(JSON.stringify({ family: t.family, style: weightToStyle(t.weight) }));
+  }
+  // Always include fallback weights so helper text nodes never fail
+  for (const family of [...new Set(Object.values(tokens.typography).map(t => t.family))]) {
+    for (const style of ["Regular", "Medium", "SemiBold", "Bold"]) {
+      toLoad.add(JSON.stringify({ family, style }));
+    }
+  }
+  for (const entry of toLoad) {
+    try { await figma.loadFontAsync(JSON.parse(entry)); } catch {}
+  }
+}
+
 async function createTokenStyles() { ... }
 
 const components = [ ... ];
@@ -150,17 +169,17 @@ async function createComponents() { ... }
 const pages = [ ... ];
 async function buildFrames() { ... }
 
-function solidColor(hex) { ... }
-async function loadFonts() { ... }
-
-(async () => {
+// Top-level await — NO async IIFE (crashes Figma console before fonts load)
+try {
+  console.log("⏳ Starting design import...");
   await loadFonts();
   await createTokenStyles();
   await createComponents();
   await buildFrames();
-  figma.notify("🎉 Entire design imported!", { timeout: 5000 });
-  figma.closePlugin();
-})();
+  console.log("🎉 SUCCESS: Design imported!");
+} catch (err) {
+  console.error("❌ ERROR:", err);
+}
 ```
 
 See full templates in:
@@ -259,7 +278,25 @@ For each route generate:
 - Mobile frame (390px) — always first, primary for app projects
 - Desktop frame (1440px) — placed 80px to the right of mobile
 
-### Rule 5: lineHeight must use PIXELS, PERCENT or AUTO — never MULTIPLIER
+### Rule 5: Map system fonts to Figma-loadable fonts
+
+Figma cannot load OS-level system fonts. Any system font reference found in the repo must be mapped to the nearest Figma-available equivalent before generating the script.
+
+| Source font | Map to |
+|---|---|
+| SF Pro, SF Pro Display, SF Pro Text | `"Inter"` |
+| -apple-system, BlinkMacSystemFont | `"Inter"` |
+| `.font(.system(...))` (SwiftUI) | `"Inter"` |
+| Roboto | `"Roboto"` (available in Figma) |
+| system-ui | `"Inter"` |
+| Android: sans-serif / Roboto | `"Roboto"` |
+
+Add a comment in the generated script noting the mapping so users know why the font differs from their app:
+```javascript
+// Note: SF Pro (iOS system font) mapped to Inter — Figma cannot load device fonts
+```
+
+### Rule 6: lineHeight must use PIXELS, PERCENT or AUTO — never MULTIPLIER
 
 Figma does not accept `MULTIPLIER` as a lineHeight unit. Always use one of the three valid formats:
 

@@ -160,12 +160,20 @@ function weightToStyle(w) {
 }
 
 async function loadFonts() {
-  const families = ["Inter", "JetBrains Mono"];
-  const styles = ["Regular", "Medium", "SemiBold", "Bold"];
-  for (const family of families) {
-    for (const style of styles) {
-      try { await figma.loadFontAsync({ family, style }); } catch {}
+  // Derive every font the script will actually use from tokens.typography
+  const toLoad = new Set();
+  for (const t of Object.values(tokens.typography)) {
+    const style = weightToStyle(t.weight);
+    for (const s of [style, "Regular", "Medium", "SemiBold", "Bold"]) {
+      toLoad.add(JSON.stringify({ family: t.family, style: s }));
     }
+  }
+  // Always load Inter as fallback — used by helper text nodes (labels, placeholders)
+  for (const s of ["Regular", "Medium", "SemiBold", "Bold"]) {
+    toLoad.add(JSON.stringify({ family: "Inter", style: s }));
+  }
+  for (const entry of toLoad) {
+    try { await figma.loadFontAsync(JSON.parse(entry)); } catch {}
   }
 }
 
