@@ -142,6 +142,25 @@ Structure for `figma-import.js`:
 // Run in: Figma → Plugins → Development → Open Console
 
 const tokens = { colors: {...}, typography: {...}, spacing: {...} };
+function solidColor(hex) { ... }
+
+async function loadFonts() {
+  // Collect every unique family+style from tokens.typography, then load them all
+  const toLoad = new Set();
+  for (const t of Object.values(tokens.typography)) {
+    toLoad.add(JSON.stringify({ family: t.family, style: weightToStyle(t.weight) }));
+  }
+  // Always include fallback weights so helper text nodes never fail
+  for (const family of [...new Set(Object.values(tokens.typography).map(t => t.family))]) {
+    for (const style of ["Regular", "Medium", "Semi Bold", "Bold"]) {
+      toLoad.add(JSON.stringify({ family, style }));
+    }
+  }
+  for (const entry of toLoad) {
+    try { await figma.loadFontAsync(JSON.parse(entry)); } catch {}
+  }
+}
+
 async function createTokenStyles() { ... }
 
 const components = [ ... ];
@@ -150,17 +169,17 @@ async function createComponents() { ... }
 const pages = [ ... ];
 async function buildFrames() { ... }
 
-function solidColor(hex) { ... }
-async function loadFonts() { ... }
-
-(async () => {
+// Top-level await — NO async IIFE (crashes Figma console before fonts load)
+try {
+  console.log("⏳ Starting design import...");
   await loadFonts();
   await createTokenStyles();
   await createComponents();
   await buildFrames();
-  figma.notify("🎉 Entire design imported!", { timeout: 5000 });
-  figma.closePlugin();
-})();
+  console.log("🎉 SUCCESS: Design imported!");
+} catch (err) {
+  console.error("❌ ERROR:", err);
+}
 ```
 
 See full templates in:
@@ -259,7 +278,25 @@ For each route generate:
 - Mobile frame (390px) — always first, primary for app projects
 - Desktop frame (1440px) — placed 80px to the right of mobile
 
-### Rule 5: lineHeight must use PIXELS, PERCENT or AUTO — never MULTIPLIER
+### Rule 5: Map system fonts to Figma-loadable fonts
+
+Figma cannot load OS-level system fonts. Any system font reference found in the repo must be mapped to the nearest Figma-available equivalent before generating the script.
+
+| Source font | Map to |
+|---|---|
+| SF Pro, SF Pro Display, SF Pro Text | `"Inter"` |
+| -apple-system, BlinkMacSystemFont | `"Inter"` |
+| `.font(.system(...))` (SwiftUI) | `"Inter"` |
+| Roboto | `"Roboto"` (available in Figma) |
+| system-ui | `"Inter"` |
+| Android: sans-serif / Roboto | `"Roboto"` |
+
+Add a comment in the generated script noting the mapping so users know why the font differs from their app:
+```javascript
+// Note: SF Pro (iOS system font) mapped to Inter — Figma cannot load device fonts
+```
+
+### Rule 6: lineHeight must use PIXELS, PERCENT or AUTO — never MULTIPLIER
 
 Figma does not accept `MULTIPLIER` as a lineHeight unit. Always use one of the three valid formats:
 
@@ -327,14 +364,32 @@ await figma.setCurrentPageAsync(page);
 
 `figma.notify()` relies on async timers that can crash when the console environment shuts down. `figma.closePlugin()` terminates the environment mid-run when called from the console.
 
+This applies at EVERY point in the script — including the very last line. Do not add `figma.notify()` after the try/catch block as a "success toast".
+
 ```javascript
-// WRONG ❌
+// WRONG ❌ — anywhere in the script, including the final line
 figma.notify("🎉 Done!", { timeout: 5000 });
 figma.closePlugin();
 
 // CORRECT ✅
 console.log("🎉 SUCCESS: Design imported!");
 ```
+
+### Rule 9: Use single-quoted outer delimiters when string content may contain double quotes
+
+If generated string content (labels, titles, names from the repo) could contain double-quote characters, use single quotes as the outer delimiter. A double quote inside a double-quoted JS string will break the parser with "missing ) after argument list".
+
+```javascript
+// WRONG ❌ — breaks if the string contains "
+t.characters = "Which actor plays the main character in "The Dark Knight"?";
+
+// CORRECT ✅ — safe regardless of content
+t.characters = 'Which actor plays the main character in "The Dark Knight"?';
+```
+
+Apply this whenever the string value comes from extracted repo data — component names, page titles, label text, anything that wasn't written by hand.
+
+---
 
 ### Correct main block template
 
@@ -391,3 +446,19 @@ This section will be replaced with your project's rules.
 - **Styling approach** (Tailwind, CSS Modules, Styled Components, CSS vars, etc.)
 - **Component folder structure** (where your components live)
 - **Code generation rules** (naming conventions, file format, output structure)
+
+---
+
+## SwiftUI Project Notes (learned from SceneIt)
+
+When extracting from a SwiftUI project:
+
+- **Colors**: Read `Color+Extensions.swift` or `Assets.xcassets` color set JSON files. Dark-mode variants are usually the primary appearance.
+- **Flat token object**: Use a flat `const colors = { key: "#hex" }` rather than a nested `tokens.colors` object — the script helper functions (`sc`, `hGrad`, `vGrad`) reference colors directly.
+- **Typography**: SwiftUI `.font(.system(size:weight:))` maps to `Inter` in Figma. Extract all unique sizes and weights into a semantic token table.
+- **Spacing constants**: Look for `enum Spacing` or `struct Spacing` with static `let` values.
+- **Corner radius**: Look for `enum CornerRadius` or extension on `CGFloat`.
+- **Views → Frames**: Each `*View.swift` file is one frame. Map `ZStack/VStack/HStack` to Figma frame layout direction.
+- **Custom shapes** (`Shape` protocol): Cannot be reproduced exactly — approximate with nearest available Figma shape and note the limitation in `design-system-summary.md`.
+- **Gradient helpers**: Always generate `hGrad(c1, c2)` and `vGrad(c1, c2)` helpers in the script when the app uses gradients.
+- **`txt()` helper**: Always generate an async `txt(chars, size, weight, hex, alpha)` helper to avoid repeating font/fill setup on every text node.

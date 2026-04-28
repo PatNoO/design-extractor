@@ -147,25 +147,72 @@ const pages = [
 ];
 
 // ---- HELPERS ----
-function solidColor(hex) {
+function solidColor(hex, alpha = 1) {
   if (!hex || hex === "transparent") return [];
   const r = parseInt(hex.slice(1,3), 16) / 255;
   const g = parseInt(hex.slice(3,5), 16) / 255;
   const b = parseInt(hex.slice(5,7), 16) / 255;
-  return [{ type: "SOLID", color: { r, g, b } }];
+  return [{ type: "SOLID", color: { r, g, b }, opacity: alpha }];
+}
+
+// Horizontal gradient (left → right)
+function hGrad(h1, h2) {
+  const c1 = solidColor(h1)[0].color;
+  const c2 = solidColor(h2)[0].color;
+  return [{
+    type: "GRADIENT_LINEAR",
+    gradientTransform: [[1, 0, 0], [0, 1, 0]],
+    gradientStops: [
+      { position: 0, color: { ...c1, a: 1 } },
+      { position: 1, color: { ...c2, a: 1 } },
+    ],
+  }];
+}
+
+// Vertical gradient (top → bottom)
+function vGrad(h1, h2) {
+  const c1 = solidColor(h1)[0].color;
+  const c2 = solidColor(h2)[0].color;
+  return [{
+    type: "GRADIENT_LINEAR",
+    gradientTransform: [[0, 1, 0], [-1, 0, 1]],
+    gradientStops: [
+      { position: 0, color: { ...c1, a: 1 } },
+      { position: 1, color: { ...c2, a: 1 } },
+    ],
+  }];
 }
 
 function weightToStyle(w) {
-  return { 400:"Regular", 500:"Medium", 600:"SemiBold", 700:"Bold", 800:"ExtraBold" }[w] || "Regular";
+  return { 400:"Regular", 500:"Medium", 600:"Semi Bold", 700:"Bold", 800:"Extra Bold" }[w] || "Regular";
+}
+
+// Create a text node in one call (must be called after loadFonts)
+async function txt(chars, size, weight, hexColor, alpha = 1) {
+  const n = figma.createText();
+  n.fontName = { family: "Inter", style: weight };
+  n.fontSize = size;
+  n.characters = chars;
+  n.fills = solidColor(hexColor, alpha);
+  n.lineHeight = { unit: "PERCENT", value: 140 };
+  return n;
 }
 
 async function loadFonts() {
-  const families = ["Inter", "JetBrains Mono"];
-  const styles = ["Regular", "Medium", "SemiBold", "Bold"];
-  for (const family of families) {
-    for (const style of styles) {
-      try { await figma.loadFontAsync({ family, style }); } catch {}
+  // Derive every font the script will actually use from tokens.typography
+  const toLoad = new Set();
+  for (const t of Object.values(tokens.typography)) {
+    const style = weightToStyle(t.weight);
+    for (const s of [style, "Regular", "Medium", "Semi Bold", "Bold"]) {
+      toLoad.add(JSON.stringify({ family: t.family, style: s }));
     }
+  }
+  // Always load Inter as fallback — used by helper text nodes (labels, placeholders)
+  for (const s of ["Regular", "Medium", "Semi Bold", "Bold"]) {
+    toLoad.add(JSON.stringify({ family: "Inter", style: s }));
+  }
+  for (const entry of toLoad) {
+    try { await figma.loadFontAsync(JSON.parse(entry)); } catch {}
   }
 }
 
@@ -181,7 +228,9 @@ async function createTokenStyles() {
     style.name = `Typography/${name}`;
     style.fontName = { family: props.family, style: weightToStyle(props.weight) };
     style.fontSize = props.size;
-    style.lineHeight = { unit: "MULTIPLIER", value: props.lineHeight };
+    // MULTIPLIER is invalid — convert to PERCENT (e.g. 1.5 → 150)
+    const lhValue = props.lineHeight < 10 ? props.lineHeight * 100 : props.lineHeight;
+    style.lineHeight = { unit: "PERCENT", value: lhValue };
   }
   console.log("✅ Token styles created");
 }
@@ -222,76 +271,68 @@ async function createComponents() {
 }
 
 // ---- BUILD FRAMES ----
+// ALL frames on ONE page — never create a page per route (free plan = 3 pages max)
 async function buildFrames() {
+  const figmaPage = figma.createPage();
+  figmaPage.name = "📐 Frames";
+  await figma.setCurrentPageAsync(figmaPage);
+
+  const GAP = 80;
+  let xOff = 0;
+
   for (const pageData of pages) {
-    const figmaPage = figma.createPage();
-    figmaPage.name = pageData.name;
-    await figma.setCurrentPageAsync(figmaPage);
+    const W = pageData.width || 390;
+    const H = pageData.height || 844;
 
-    // Desktop frame
-    const desktop = figma.createFrame();
-    desktop.name = `${pageData.name} – Desktop`;
-    desktop.resize(pageData.width || 1440, 100);
-    desktop.layoutMode = pageData.layout || "VERTICAL";
-    desktop.primaryAxisSizingMode = "AUTO";
-    desktop.counterAxisSizingMode = "FIXED";
-    desktop.fills = solidColor("#FFFFFF");
+    // Mobile / primary frame
+    const frame = figma.createFrame();
+    frame.name = `${pageData.name} – Mobile (390)`;
+    frame.resize(W, H);
+    frame.x = xOff; frame.y = 0;
+    frame.fills = solidColor(pageData.bg || "#FFFFFF");
+    frame.clipsContent = true;
 
-    for (const section of pageData.sections) {
+    for (const section of (pageData.sections || [])) {
       const s = figma.createFrame();
       s.name = section.name;
-      s.resize(section.width || pageData.width || 1440, section.height || 80);
-      s.fills = solidColor(section.bg);
-      s.layoutMode = section.layout || "HORIZONTAL";
-      s.itemSpacing = section.gap || 16;
-      s.paddingLeft = s.paddingRight = section.paddingX || 80;
-      s.paddingTop = s.paddingBottom = section.paddingY || 24;
-      s.primaryAxisSizingMode = section.height ? "FIXED" : "AUTO";
-      s.counterAxisSizingMode = "FIXED";
-
-      if (section.align === "CENTER") {
-        s.primaryAxisAlignItems = "CENTER";
-        s.counterAxisAlignItems = "CENTER";
+      s.resize(section.width || W, section.height || 80);
+      s.x = section.x || 0; s.y = section.y || 0;
+      s.fills = solidColor(section.bg || "#F9FAFB");
+      if (section.layout) {
+        s.layoutMode = section.layout;
+        s.itemSpacing = section.gap || 16;
+        s.paddingLeft = s.paddingRight = section.paddingX || 16;
+        s.paddingTop = s.paddingBottom = section.paddingY || 16;
+        s.primaryAxisSizingMode = section.height ? "FIXED" : "AUTO";
+        s.counterAxisSizingMode = "FIXED";
+        if (section.align === "CENTER") {
+          s.primaryAxisAlignItems = "CENTER";
+          s.counterAxisAlignItems = "CENTER";
+        }
       }
-
       if (section.border) {
         s.strokes = solidColor(section.border);
-        s.strokeWeight = 1;
-        s.strokeAlign = "INSIDE";
+        s.strokeWeight = 1; s.strokeAlign = "INSIDE";
       }
-
-      for (const itemName of (section.items || [])) {
-        const placeholder = figma.createFrame();
-        placeholder.name = itemName;
-        placeholder.resize(160, 36);
-        placeholder.fills = solidColor("#EFF6FF");
-        placeholder.cornerRadius = 6;
-        placeholder.strokes = solidColor("#BFDBFE");
-        placeholder.strokeWeight = 1;
-        const t = figma.createText();
-        t.characters = itemName;
-        t.fontSize = 11;
-        t.fills = solidColor("#3B82F6");
-        placeholder.appendChild(t);
-        t.x = 10; t.y = (36 - t.height) / 2;
-        s.appendChild(placeholder);
-      }
-
-      desktop.appendChild(s);
+      frame.appendChild(s);
     }
 
-    figmaPage.appendChild(desktop);
+    figmaPage.appendChild(frame);
+    xOff += W + GAP;
 
-    // Mobile frame
-    const mobile = figma.createFrame();
-    mobile.name = `${pageData.name} – Mobile`;
-    mobile.resize(390, 844);
-    mobile.x = (pageData.width || 1440) + 80;
-    mobile.fills = solidColor("#FFFFFF");
-    mobile.layoutMode = "VERTICAL";
-    mobile.primaryAxisSizingMode = "AUTO";
-    figmaPage.appendChild(mobile);
+    // Desktop frame (1440px) placed 80px to the right of mobile
+    if (pageData.desktop !== false) {
+      const DW = 1440;
+      const desktop = figma.createFrame();
+      desktop.name = `${pageData.name} – Desktop (1440)`;
+      desktop.resize(DW, H);
+      desktop.x = xOff; desktop.y = 0;
+      desktop.fills = solidColor(pageData.bg || "#FFFFFF");
+      figmaPage.appendChild(desktop);
+      xOff += DW + GAP;
+    }
   }
+
   console.log("✅ Frames created");
 }
 
