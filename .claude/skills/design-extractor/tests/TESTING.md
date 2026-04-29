@@ -1,0 +1,123 @@
+# Testing the design-extractor skill end-to-end
+
+## Prerequisites
+- Claude Code installed
+- Figma account (free tier is fine)
+- The design-extractor skill in `.claude/skills/design-extractor/`
+
+---
+
+## Test 1: Fixture extraction (2 minutes)
+
+The test fixture at `tests/fixture/` is a minimal HTML/CSS project covering every extraction path: CSS custom properties, 4 component types with variants, system font reference (`system-ui`), and 2 routes.
+
+**Step 1 — Run the skill against the fixture:**
+```
+Ask Claude Code: "Generate figma-import.js for the project at .claude/skills/design-extractor/tests/fixture/"
+```
+
+**Step 2 — Validate the output before opening Figma:**
+```bash
+bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js
+```
+Expected: all checks pass, exit 0.
+
+**Step 3 — Run in Figma:**
+- Open Figma → Plugins → Development → Open Console
+- Paste `figma-import.js` → Enter
+
+**Step 4 — Watch the console output. Expected sequence:**
+```
+🚀 Design import starting...
+   Phases: fonts → token styles → components → frames
+⏳ [1/4] Loading fonts...
+✅ [1/4] Fonts loaded
+⏳ [2/4] Creating token styles...
+✅ [2/4] Token styles created
+⏳ [3/4] Building components...
+  Building 6 component(s)...
+  Built 6/6 components
+✅ [3/4] Components built
+⏳ [4/4] Building frames...
+  Building 2 page(s) × 2 sizes (mobile + desktop)
+  ✓ Frame: Home – Mobile
+  ✓ Frame: Home – Desktop
+  ✓ Frame: Dashboard – Mobile
+  ✓ Frame: Dashboard – Desktop
+  Built 2/2 pages
+✅ [4/4] Frames built
+
+🎉 Import complete. Check each phase above for any partial failures.
+```
+
+**Step 5 — Verify in Figma:**
+- [ ] Exactly 2 pages: "🧩 Components" and "📐 Frames"
+- [ ] Components page has Button (Primary, Secondary, Ghost), Card, Input, Badge
+- [ ] Frames page has 4 frames: Home Mobile (390px), Home Desktop (1440px), Dashboard Mobile (390px), Dashboard Desktop (1440px)
+- [ ] Colors reflect the fixture palette (blue primary #2563EB, white background, etc.)
+- [ ] No font errors in console (system-ui must have been mapped to Inter)
+
+---
+
+## Test 2: Validator catches known bad patterns
+
+Verify `validate.sh` correctly detects each rule violation:
+
+```bash
+# Rule 6 — MULTIPLIER lineHeight
+echo 'style.lineHeight = { unit: "MULTIPLIER", value: 1.5 };' > /tmp/bad.js
+bash .claude/skills/design-extractor/scripts/validate.sh /tmp/bad.js
+# Expected: Rule 6 FAIL, exit 1
+
+# Rule 7 — async IIFE
+echo '(async () => { await loadFonts(); })();' > /tmp/bad.js
+bash .claude/skills/design-extractor/scripts/validate.sh /tmp/bad.js
+# Expected: Rule 7 FAIL, exit 1
+
+# Rule 8 — synchronous page setter
+echo 'figma.currentPage = page;' > /tmp/bad.js
+bash .claude/skills/design-extractor/scripts/validate.sh /tmp/bad.js
+# Expected: Rule 8 FAIL, exit 1
+
+# Rule 9 — figma.notify
+echo 'figma.notify("Done");' > /tmp/bad.js
+bash .claude/skills/design-extractor/scripts/validate.sh /tmp/bad.js
+# Expected: Rule 9 FAIL, exit 1
+
+# Rule 5 — unmapped system font
+echo 'fontName = { family: "SF Pro", style: "Regular" };' > /tmp/bad.js
+bash .claude/skills/design-extractor/scripts/validate.sh /tmp/bad.js
+# Expected: Rule 5 FAIL, exit 1
+
+# Clean file — all pass
+echo 'console.log("ok");' > /tmp/clean.js
+bash .claude/skills/design-extractor/scripts/validate.sh /tmp/clean.js
+# Expected: most checks pass (page count will warn), exit depends on page count check
+```
+
+---
+
+## Test 3: Framework coverage
+
+Run the skill against a real project for each framework type and validate:
+
+| Fixture type | What to verify |
+|---|---|
+| `tests/fixture/` (HTML/CSS) | CSS vars extracted as tokens, system-ui → Inter |
+| Next.js + Tailwind repo | `tailwind.config.*` colors used, not hardcoded |
+| SwiftUI repo | SF Pro mapped to Inter, comment present in script |
+| Vue + CSS vars repo | `:root` vars extracted as tokens |
+
+---
+
+## Debugging failures
+
+| Symptom | Likely cause | How to fix |
+|---|---|---|
+| Font load error in Figma | System font not mapped | validate.sh Rule 5 — find and replace with Inter |
+| `Cannot read property ... of undefined` | Missing per-item try-catch | Check frame-generator.md loops |
+| Nothing created, no output | Async IIFE present | validate.sh Rule 7 |
+| Script stops after phase 1–3 | runPhase helper missing | validate.sh Structure check |
+| `TypeError: unit is invalid` | lineHeight MULTIPLIER | validate.sh Rule 6 |
+| Warning: setCurrentPage deprecated | Using sync setter | validate.sh Rule 8 |
+| All 4 phases logged but Figma shows nothing | Too many pages created | validate.sh Rule 1 — check page count |

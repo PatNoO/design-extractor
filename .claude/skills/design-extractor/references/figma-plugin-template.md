@@ -14,13 +14,13 @@ No installation. No accounts. No API keys. Just paste and run.
 ## What gets created
 
 ```
-Figma Pages:
-  🎨 Tokens     → all colors and typography as Figma Styles
-  🧩 Components → all components (Button, Card, Input...)
-  🏠 Home       → desktop + mobile frame
-  📊 Dashboard  → desktop + mobile frame
-  [one page per route in your app]
+Figma Pages (maximum 2 — free plan limit):
+  🧩 Components → all components side by side
+  📐 Frames     → ALL page frames side by side on one canvas
 ```
+
+All page frames sit on a single "📐 Frames" page, positioned with an xOffset (80px gap).
+Never create a separate Figma page per route.
 
 ## Template reference
 

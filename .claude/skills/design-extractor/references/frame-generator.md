@@ -242,32 +242,39 @@ async function createComponents() {
   await figma.setCurrentPageAsync(page);
 
   let x = 40;
+  let built = 0;
+  console.log(`  Building ${components.length} component(s)...`);
   for (const comp of components) {
-    const frame = figma.createFrame();
-    frame.name = comp.name;
-    frame.resize(comp.width, comp.height);
-    frame.x = x;
-    frame.y = 40;
-    frame.cornerRadius = comp.radius || 0;
-    frame.fills = solidColor(comp.bg);
-    if (comp.stroke) {
-      frame.strokes = solidColor(comp.stroke);
-      frame.strokeWeight = 1;
-      frame.strokeAlign = "INSIDE";
+    try {
+      const frame = figma.createFrame();
+      frame.name = comp.name;
+      frame.resize(comp.width, comp.height);
+      frame.x = x;
+      frame.y = 40;
+      frame.cornerRadius = comp.radius || 0;
+      frame.fills = solidColor(comp.bg);
+      if (comp.stroke) {
+        frame.strokes = solidColor(comp.stroke);
+        frame.strokeWeight = 1;
+        frame.strokeAlign = "INSIDE";
+      }
+      if (comp.text) {
+        const t = figma.createText();
+        t.characters = comp.text;
+        t.fontSize = 13;
+        t.fills = solidColor(comp.textColor || "#111827");
+        frame.appendChild(t);
+        t.x = (comp.width - t.width) / 2;
+        t.y = (comp.height - t.height) / 2;
+      }
+      page.appendChild(frame);
+      x += comp.width + 24;
+      built++;
+    } catch (err) {
+      console.warn(`  ⚠️ Skipped component "${comp.name}": ${err.message || err}`);
     }
-    if (comp.text) {
-      const t = figma.createText();
-      t.characters = comp.text;
-      t.fontSize = 13;
-      t.fills = solidColor(comp.textColor || "#111827");
-      frame.appendChild(t);
-      t.x = (comp.width - t.width) / 2;
-      t.y = (comp.height - t.height) / 2;
-    }
-    page.appendChild(frame);
-    x += comp.width + 24;
   }
-  console.log("✅ Components created");
+  console.log(`  Built ${built}/${components.length} components`);
 }
 
 // ---- BUILD FRAMES ----
@@ -316,6 +323,10 @@ async function buildFrames() {
       }
       frame.appendChild(s);
     }
+  }
+
+  console.log(`  Built ${built}/${pages.length} pages`);
+}
 
     figmaPage.appendChild(frame);
     xOff += W + GAP;
@@ -338,16 +349,35 @@ async function buildFrames() {
 
 // ---- RUN EVERYTHING ----
 // Top-level await — no IIFE wrapper (console crashes with async IIFE)
-try {
-  console.log("🚀 Starting design import...");
+console.log('🚀 Design import starting...');
+console.log('   Phases: fonts → token styles → components → frames');
+
+await runPhase('Load Fonts', async () => {
+  console.log('⏳ [1/4] Loading fonts...');
   await loadFonts();
+  console.log('✅ [1/4] Fonts loaded');
+});
+
+await runPhase('Token Styles', async () => {
+  console.log('⏳ [2/4] Creating token styles...');
   await createTokenStyles();
+  console.log('✅ [2/4] Token styles created');
+});
+
+await runPhase('Components', async () => {
+  console.log('⏳ [3/4] Building components...');
   await createComponents();
+  console.log('✅ [3/4] Components built');
+});
+
+await runPhase('Frames', async () => {
+  console.log('⏳ [4/4] Building frames...');
   await buildFrames();
-  console.log("🎉 Entire design imported!");
-} catch (err) {
-  console.error("❌ ERROR:", err);
-}
+  console.log('✅ [4/4] Frames built');
+});
+
+console.log('');
+console.log('🎉 Import complete. Check each phase above for any partial failures.');
 ```
 
 ---
