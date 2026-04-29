@@ -1,0 +1,71 @@
+/* Test fixture — covers all token extraction paths */
+:root {
+  /* Colors */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-border: #E2E8F0;
+  --color-error: #DC2626;
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+
+  /* Typography — includes system-ui to trigger font-mapping rule */
+  --font-family-sans: Inter, system-ui, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+/* Component: Button (3 variants) */
+.btn { display: inline-flex; align-items: center; padding: var(--spacing-2) var(--spacing-4); border-radius: var(--radius-md); font-weight: var(--font-weight-semibold); font-size: var(--font-size-sm); }
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-secondary { background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); }
+.btn-ghost { background: transparent; color: var(--color-text-secondary); }
+
+/* Component: Card */
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--spacing-6); }
+
+/* Component: Input */
+.input { background: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--spacing-2) var(--spacing-3); font-size: var(--font-size-base); width: 100%; }
+.input:focus { border-color: var(--color-primary); outline: none; }
+
+/* Component: Badge (3 variants) */
+.badge { display: inline-flex; padding: 2px var(--spacing-2); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); }
+.badge-primary { background: #EFF6FF; color: var(--color-primary); }
+.badge-success { background: #F0FDF4; color: var(--color-success); }
+.badge-error { background: #FEF2F2; color: var(--color-error); }
+
+/* Layout helpers */
+.navbar { display: flex; align-items: center; padding: 0 var(--spacing-8); height: 64px; background: var(--color-background); border-bottom: 1px solid var(--color-border); }
+.container { max-width: 1280px; margin: 0 auto; padding: 0 var(--spacing-8); }
+.hero { padding: var(--spacing-16) 0; text-align: center; background: var(--color-surface); }
+.footer { background: var(--color-text-primary); color: var(--color-background); padding: var(--spacing-12) 0; }

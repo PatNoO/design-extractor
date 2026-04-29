@@ -197,6 +197,35 @@ Always deliver:
 
 ---
 
+## Step 7: Self-validate before delivering
+
+Before writing `figma-import.js`, scan your own generated script against every critical rule.
+Do not deliver until all checks pass.
+
+### Rule violations (instant fail — fix before delivering)
+
+- [ ] **Rule 1 – Page count**: Does the script create exactly 2 pages (`🧩 Components` and `📐 Frames`)? Search output for `figma.createPage()`. Count must be exactly 2.
+- [ ] **Rule 2 – No placeholders**: Does every `fills` value come from `tokens.colors.*`? Search for hardcoded hex strings not assigned to a token first.
+- [ ] **Rule 3 – Token connections**: Does every frame section reference `tokens.colors.*` rather than a literal hex?
+- [ ] **Rule 4 – Mobile + desktop frames**: For each entry in `pages[]`, is there both a 390px mobile and a 1440px desktop frame?
+- [ ] **Rule 5 – Font mapping**: Does the script contain any of: `"SF Pro"`, `"-apple-system"`, `"BlinkMacSystemFont"`, `"system-ui"`, `"system"`? If yes, replace with `"Inter"`.
+- [ ] **Rule 6 – lineHeight unit**: Search for `unit: "MULTIPLIER"`. Must return zero matches. All lineHeight values must use `"PIXELS"`, `"PERCENT"`, or `"AUTO"`.
+- [ ] **Rule 7 – Top-level await**: Search for `(async () => {` or `(async() => {`. Must return zero matches.
+- [ ] **Rule 8 – setCurrentPageAsync**: Search for `figma.currentPage =` (assignment, not `.name =`). Must return zero matches.
+- [ ] **Rule 9 – No figma.notify / figma.closePlugin**: Search for `figma.notify(` and `figma.closePlugin(`. Must both return zero matches.
+- [ ] **Rule 10 – String quoting**: Any string value sourced from extracted repo data (page titles, component names, button text) uses single-quote outer delimiter.
+
+### Structure checks
+
+- [ ] `runPhase` helper is present and all four phases use it
+- [ ] Each component loop and each frame loop has its own per-item try-catch
+- [ ] Progress `console.log` messages present at start of each phase (`[1/4]`, `[2/4]`, `[3/4]`, `[4/4]`)
+
+If any check fails: fix the generated script, then re-run the checklist from the top.
+Only deliver once all boxes can be checked.
+
+---
+
 ## Framework compatibility
 
 | Framework | Tokens | Components | Frames |

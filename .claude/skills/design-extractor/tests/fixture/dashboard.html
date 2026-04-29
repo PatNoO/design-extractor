@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Fixture App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="logo">FixtureApp</span>
+    <button class="btn btn-ghost">Log out</button>
+  </nav>
+
+  <div style="display:flex;height:calc(100vh - 64px)">
+    <aside style="width:240px;background:#1E293B;padding:24px 16px">
+      <nav style="display:flex;flex-direction:column;gap:8px">
+        <a style="color:#fff" href="/">Overview</a>
+        <a style="color:#94A3B8" href="#">Analytics</a>
+        <a style="color:#94A3B8" href="#">Settings</a>
+      </nav>
+    </aside>
+
+    <main style="flex:1;padding:32px;background:#F8FAFC">
+      <h1>Dashboard</h1>
+      <div style="display:flex;gap:16px;margin-top:24px">
+        <div class="card" style="flex:1">
+          <h3>Total Users</h3>
+          <p style="font-size:2rem;font-weight:700">1,234</p>
+          <span class="badge badge-success">+12%</span>
+        </div>
+        <div class="card" style="flex:1">
+          <h3>Active Sessions</h3>
+          <p style="font-size:2rem;font-weight:700">89</p>
+          <span class="badge badge-error">-3%</span>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

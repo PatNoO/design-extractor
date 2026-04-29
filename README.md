@@ -74,7 +74,10 @@ The skill includes:
 | `SKILL.md` | Main skill definition with all extraction rules and Figma API constraints |
 | `references/` | Detailed guides for patterns, templates, and generation logic |
 | `scripts/extract.py` | Standalone Python utility for pre-extracting tokens |
+| `scripts/validate.sh` | Validates a generated `figma-import.js` for known rule violations |
 | `setup-extractor.md` | Workflow for adapting the skill to a new codebase |
+| `tests/fixture/` | Minimal HTML/CSS project used to verify the skill end-to-end |
+| `tests/TESTING.md` | Full testing workflow with expected outputs and a debugging table |
 
 ## Usage
 
@@ -201,6 +204,42 @@ style.lineHeight = { unit: "PERCENT", value: 150 };
 ### No placeholders — real values only
 
 Every color, spacing and font in the generated frames references the extracted tokens directly. Generic placeholder rectangles are prohibited.
+
+---
+
+## Testing
+
+### Verify the skill works (2 minutes)
+
+The repo includes a minimal test fixture — a plain HTML/CSS project that covers every extraction path. Use it to confirm the skill is working correctly before running it on your own codebase.
+
+**Step 1 — Generate against the fixture:**
+```
+Ask Claude Code: "Generate figma-import.js for .claude/skills/design-extractor/tests/fixture/"
+```
+
+**Step 2 — Validate the output:**
+```bash
+bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js
+```
+Expected: all checks pass, exit 0.
+
+**Step 3 — Run in Figma and verify:**
+- Open Figma → Plugins → Development → Open Console
+- Paste `figma-import.js` → Enter
+- Expected result: 2 pages (`🧩 Components` and `📐 Frames`), 8 components, 4 frames (Home + Dashboard × Mobile + Desktop)
+
+See `tests/TESTING.md` for the full workflow including expected console output, framework coverage, and a debugging table.
+
+### Validate any generated script
+
+`validate.sh` can be run against any generated `figma-import.js` to catch known Figma API violations before you paste:
+
+```bash
+bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js
+```
+
+Checks for: wrong lineHeight units, async IIFEs, deprecated page setters, `figma.notify()` calls, unmapped system fonts, and more. Exit 0 = safe to paste.
 
 ---
 

@@ -242,32 +242,39 @@ async function createComponents() {
   await figma.setCurrentPageAsync(page);
 
   let x = 40;
+  let built = 0;
+  console.log(`  Building ${components.length} component(s)...`);
   for (const comp of components) {
-    const frame = figma.createFrame();
-    frame.name = comp.name;
-    frame.resize(comp.width, comp.height);
-    frame.x = x;
-    frame.y = 40;
-    frame.cornerRadius = comp.radius || 0;
-    frame.fills = solidColor(comp.bg);
-    if (comp.stroke) {
-      frame.strokes = solidColor(comp.stroke);
-      frame.strokeWeight = 1;
-      frame.strokeAlign = "INSIDE";
+    try {
+      const frame = figma.createFrame();
+      frame.name = comp.name;
+      frame.resize(comp.width, comp.height);
+      frame.x = x;
+      frame.y = 40;
+      frame.cornerRadius = comp.radius || 0;
+      frame.fills = solidColor(comp.bg);
+      if (comp.stroke) {
+        frame.strokes = solidColor(comp.stroke);
+        frame.strokeWeight = 1;
+        frame.strokeAlign = "INSIDE";
+      }
+      if (comp.text) {
+        const t = figma.createText();
+        t.characters = comp.text;
+        t.fontSize = 13;
+        t.fills = solidColor(comp.textColor || "#111827");
+        frame.appendChild(t);
+        t.x = (comp.width - t.width) / 2;
+        t.y = (comp.height - t.height) / 2;
+      }
+      page.appendChild(frame);
+      x += comp.width + 24;
+      built++;
+    } catch (err) {
+      console.warn(`  ⚠️ Skipped component "${comp.name}": ${err.message || err}`);
     }
-    if (comp.text) {
-      const t = figma.createText();
-      t.characters = comp.text;
-      t.fontSize = 13;
-      t.fills = solidColor(comp.textColor || "#111827");
-      frame.appendChild(t);
-      t.x = (comp.width - t.width) / 2;
-      t.y = (comp.height - t.height) / 2;
-    }
-    page.appendChild(frame);
-    x += comp.width + 24;
   }
-  console.log("✅ Components created");
+  console.log(`  Built ${built}/${components.length} components`);
 }
 
 // ---- BUILD FRAMES ----
@@ -279,75 +286,119 @@ async function buildFrames() {
 
   const GAP = 80;
   let xOff = 0;
+  let built = 0;
+
+  console.log(`  Building ${pages.length} page(s) × 2 sizes (mobile + desktop)`);
 
   for (const pageData of pages) {
-    const W = pageData.width || 390;
-    const H = pageData.height || 844;
+    try {
+      const W = pageData.width || 390;
+      const H = pageData.height || 844;
 
-    // Mobile / primary frame
-    const frame = figma.createFrame();
-    frame.name = `${pageData.name} – Mobile (390)`;
-    frame.resize(W, H);
-    frame.x = xOff; frame.y = 0;
-    frame.fills = solidColor(pageData.bg || "#FFFFFF");
-    frame.clipsContent = true;
+      // Mobile / primary frame
+      const frame = figma.createFrame();
+      frame.name = `${pageData.name} – Mobile (390)`;
+      frame.resize(W, H);
+      frame.x = xOff; frame.y = 0;
+      frame.fills = solidColor(pageData.bg || "#FFFFFF");
+      frame.clipsContent = true;
 
-    for (const section of (pageData.sections || [])) {
-      const s = figma.createFrame();
-      s.name = section.name;
-      s.resize(section.width || W, section.height || 80);
-      s.x = section.x || 0; s.y = section.y || 0;
-      s.fills = solidColor(section.bg || "#F9FAFB");
-      if (section.layout) {
-        s.layoutMode = section.layout;
-        s.itemSpacing = section.gap || 16;
-        s.paddingLeft = s.paddingRight = section.paddingX || 16;
-        s.paddingTop = s.paddingBottom = section.paddingY || 16;
-        s.primaryAxisSizingMode = section.height ? "FIXED" : "AUTO";
-        s.counterAxisSizingMode = "FIXED";
-        if (section.align === "CENTER") {
-          s.primaryAxisAlignItems = "CENTER";
-          s.counterAxisAlignItems = "CENTER";
+      for (const section of (pageData.sections || [])) {
+        try {
+          const s = figma.createFrame();
+          s.name = section.name;
+          s.resize(section.width || W, section.height || 80);
+          s.x = section.x || 0; s.y = section.y || 0;
+          s.fills = solidColor(section.bg || "#F9FAFB");
+          if (section.layout) {
+            s.layoutMode = section.layout;
+            s.itemSpacing = section.gap || 16;
+            s.paddingLeft = s.paddingRight = section.paddingX || 16;
+            s.paddingTop = s.paddingBottom = section.paddingY || 16;
+            s.primaryAxisSizingMode = section.height ? "FIXED" : "AUTO";
+            s.counterAxisSizingMode = "FIXED";
+            if (section.align === "CENTER") {
+              s.primaryAxisAlignItems = "CENTER";
+              s.counterAxisAlignItems = "CENTER";
+            }
+          }
+          if (section.border) {
+            s.strokes = solidColor(section.border);
+            s.strokeWeight = 1; s.strokeAlign = "INSIDE";
+          }
+          frame.appendChild(s);
+        } catch (err) {
+          console.warn(`  ⚠️ Skipped section "${section.name}" in "${pageData.name}": ${err.message || err}`);
         }
       }
-      if (section.border) {
-        s.strokes = solidColor(section.border);
-        s.strokeWeight = 1; s.strokeAlign = "INSIDE";
+
+      figmaPage.appendChild(frame);
+      xOff += W + GAP;
+      console.log(`  ✓ Frame: ${pageData.name} – Mobile`);
+
+      // Desktop frame (1440px) placed 80px to the right of mobile
+      if (pageData.desktop !== false) {
+        const DW = 1440;
+        const desktop = figma.createFrame();
+        desktop.name = `${pageData.name} – Desktop (1440)`;
+        desktop.resize(DW, H);
+        desktop.x = xOff; desktop.y = 0;
+        desktop.fills = solidColor(pageData.bg || "#FFFFFF");
+        figmaPage.appendChild(desktop);
+        xOff += DW + GAP;
+        console.log(`  ✓ Frame: ${pageData.name} – Desktop`);
       }
-      frame.appendChild(s);
-    }
 
-    figmaPage.appendChild(frame);
-    xOff += W + GAP;
-
-    // Desktop frame (1440px) placed 80px to the right of mobile
-    if (pageData.desktop !== false) {
-      const DW = 1440;
-      const desktop = figma.createFrame();
-      desktop.name = `${pageData.name} – Desktop (1440)`;
-      desktop.resize(DW, H);
-      desktop.x = xOff; desktop.y = 0;
-      desktop.fills = solidColor(pageData.bg || "#FFFFFF");
-      figmaPage.appendChild(desktop);
-      xOff += DW + GAP;
+      built++;
+    } catch (err) {
+      console.warn(`  ⚠️ Skipped page "${pageData.name}": ${err.message || err}`);
     }
   }
 
-  console.log("✅ Frames created");
+  console.log(`  Built ${built}/${pages.length} pages`);
+}
+
+// ---- RESILIENT PHASE RUNNER ----
+async function runPhase(label, fn) {
+  try {
+    await fn();
+  } catch (err) {
+    console.error(`❌ PHASE FAILED [${label}]:`, err.message || err);
+    // Continue — one failed phase must not prevent the rest
+  }
 }
 
 // ---- RUN EVERYTHING ----
 // Top-level await — no IIFE wrapper (console crashes with async IIFE)
-try {
-  console.log("🚀 Starting design import...");
+console.log('🚀 Design import starting...');
+console.log('   Phases: fonts → token styles → components → frames');
+
+await runPhase('Load Fonts', async () => {
+  console.log('⏳ [1/4] Loading fonts...');
   await loadFonts();
+  console.log('✅ [1/4] Fonts loaded');
+});
+
+await runPhase('Token Styles', async () => {
+  console.log('⏳ [2/4] Creating token styles...');
   await createTokenStyles();
+  console.log('✅ [2/4] Token styles created');
+});
+
+await runPhase('Components', async () => {
+  console.log('⏳ [3/4] Building components...');
   await createComponents();
+  console.log('✅ [3/4] Components built');
+});
+
+await runPhase('Frames', async () => {
+  console.log('⏳ [4/4] Building frames...');
   await buildFrames();
-  console.log("🎉 Entire design imported!");
-} catch (err) {
-  console.error("❌ ERROR:", err);
-}
+  console.log('✅ [4/4] Frames built');
+});
+
+console.log('');
+console.log('🎉 Import complete. Check each phase above for any partial failures.');
 ```
 
 ---
