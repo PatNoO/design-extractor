@@ -1,34 +1,104 @@
 # design-extractor
 
-> **Status: Early Beta** — core extraction works, but the skill is still being tested across different frameworks and project structures. Expect rough edges. Feedback and bug reports are welcome via [Issues](../../issues).
+**Stop manually syncing Figma with your code. Let Claude do it.**
 
-**A Claude Code skill that reads your codebase and generates a ready-to-run Figma script — tokens, components and frames in a single paste.**
+This repo contains two Claude Code skills that bridge the gap between your code and your design tool — in one paste.
 
----
-
-## The Problem
-
-Every time you change a color, spacing value or component in code, Figma drifts out of sync. Keeping design tools aligned with the real codebase is slow, manual work — and it usually doesn't happen.
-
-## The Solution
-
-`design-extractor` is a Claude Code skill that bridges that gap automatically. Point it at any repo and it delivers a single JavaScript file. Paste that file into the Figma console and your entire design system appears: color styles, typography, component library, and page frames at both mobile and desktop sizes — built from the actual values in your code.
-
-```
-1.  Claude Code runs the skill against your repo
-2.  Generates figma-import.js
-3.  Open Figma → Plugins → Development → Open Console
-4.  Paste → Enter
-5.  Done
-```
-
-**One paste. One Enter. Done.**
+> **Status: Early Beta** — core extraction works, but the skills are still being tested across different frameworks and project structures. Expect rough edges.
+> **If something crashes or breaks, please [open an issue](../../issues/new) — that's the most helpful thing you can do.**
 
 ---
 
-## How It Works
+## The problem (you've been here before)
 
-The skill runs in four stages:
+Maybe you built a quick prototype with Claude — got something working, something that looks roughly right. Then you started coding it for real. Now the design lives in your head and in the code, but nowhere you can actually edit visually.
+
+Or maybe you've been coding for a while and the design has drifted. Figma says one thing, the code does another, and nobody's sure which one is correct anymore.
+
+Either way, you're stuck doing something that shouldn't be manual: extracting your own design from your own code so you can look at it, refine it, and make it feel human — not like something an AI spat out.
+
+That's what these skills are for. Extract the design from your code (or your Pencil file), get it into Figma in one paste, and then put your own touch on it — adjust the spacing, soften the corners, make it yours. No more burning tokens asking Claude to tweak a border radius six times. Do that part in Figma, where it belongs.
+
+**Use Claude to get the design out. Use Figma to make it yours.**
+
+---
+
+## Don't want to read? Ask Claude instead.
+
+Since you're probably already using Claude — skip the docs. Copy the prompt below, paste it into Claude (claude.ai, Claude Code, whatever you have open), and let it walk you through everything based on your specific setup.
+
+```
+I found a repo called design-extractor that contains two Claude Code skills:
+
+1. design-extractor — scans a codebase and generates a paste-ready Figma script
+   (colors, typography, components, and page frames from the actual code values)
+
+2. pen-to-figma — reads a .pen file from Pencil and converts it into a Figma script
+
+The idea is: use Claude to get the design out of the code or Pencil file,
+paste it into Figma in one go, then do the human refinement there — adjusting
+spacing, softening corners, making it feel less AI-generated — without burning
+more tokens on Claude for visual tweaks.
+
+Can you:
+1. Ask me a few questions about my project (framework, styling approach,
+   whether I use Pencil) so you understand my setup
+2. Tell me which skill fits my situation best
+3. Walk me through exactly how to install and run it, step by step
+```
+
+That's it. Claude will ask about your stack and give you a guide that fits your actual project — not a generic one.
+
+---
+
+## The skills
+
+### `design-extractor` — Code → Figma
+
+Reads your entire codebase and generates a single JavaScript file. Paste it into the Figma console and your full design system appears: color styles, typography, components and page frames — built from the actual values in your code.
+
+**→ [Jump to design-extractor docs](#design-extractor-1)**
+
+---
+
+### `pen-to-figma` *(experimental)* — Pencil → Figma
+
+Already designing in [Pencil](https://pencil.di.fm)? This skill reads your `.pen` file and converts it into the same kind of paste-ready Figma script — so your Pencil designs land in Figma with layout, variables, and components intact.
+
+**→ [Jump to pen-to-figma docs](#pen-to-figma-1)**
+
+---
+
+## Quick start
+
+```bash
+# 1. Copy the skills into your project
+mkdir -p .claude/skills
+cp -r design-extractor .claude/skills/
+cp -r pen-to-figma .claude/skills/      # optional
+
+# 2. Open your project in Claude Code and ask:
+#    "Generate figma-import.js for this project"
+#    — or —
+#    "/pen-to-figma" (if you have a .pen file open in Pencil)
+
+# 3. Paste the output into Figma:
+#    Plugins → Development → Open Console → paste → Enter
+```
+
+That's it. No config files, no API keys, no plugins to install in Figma.
+
+---
+
+---
+
+## design-extractor
+
+> Reads your codebase. Generates a Figma script. One paste and your design system is in Figma.
+
+### How it works
+
+The skill runs in four stages every time you trigger it:
 
 | Stage | What happens |
 |-------|-------------|
@@ -37,244 +107,177 @@ The skill runs in four stages:
 | **3. Scan** | Finds UI components (Button, Card, Input…) and maps their variants and states |
 | **4. Generate** | Produces a single `figma-import.js` that creates everything in Figma automatically |
 
----
+### Usage
 
-## Installation
+Install the skill and ask Claude Code:
 
-Copy the skill into your project:
-
-```bash
-# Inside any project where you want to use it
-mkdir -p .claude/skills
-cp -r design-extractor .claude/skills/
+```
+"Generate figma-import.js for this project"
 ```
 
-Once the folder is in place, Claude Code picks it up automatically.
+Or trigger directly:
 
-## Quick Start
+```
+/design-extractor
+```
 
-1. **Install** the skill into your project (see Installation above)
-2. **Ask Claude Code**:
-   > "Generate figma-import.js for this project"
-3. Claude Code will:
-   - Scan your codebase
-   - Extract design tokens, components, and page layouts
-   - Generate a ready-to-run `figma-import.js` script
-4. **Run in Figma**:
-   - Open Figma → Plugins → Development → Open Console
-   - Paste the script → Press Enter
-   - Your entire design system appears automatically ✨
+Then in Figma:
+1. Plugins → Development → Open Console
+2. Paste `figma-import.js`
+3. Press Enter — done
 
-## Skill File Structure
+### What comes out
 
-The skill includes:
+Every run delivers three things:
 
-| File/Folder | Purpose |
-|---|---|
-| `SKILL.md` | Main skill definition with all extraction rules and Figma API constraints |
-| `references/` | Detailed guides for patterns, templates, and generation logic |
-| `scripts/extract.py` | Standalone Python utility for pre-extracting tokens |
-| `scripts/validate.sh` | Validates a generated `figma-import.js` for known rule violations |
-| `setup-extractor.md` | Workflow for adapting the skill to a new codebase |
-| `tests/fixture/` | Minimal HTML/CSS project used to verify the skill end-to-end |
-| `tests/TESTING.md` | Full testing workflow with expected outputs and a debugging table |
+1. **`figma-import.js`** — the combined, paste-ready script
+2. **`design-system-summary.md`** — what was extracted and any gaps flagged
+3. Three-line instructions for running it in Figma
 
-## Usage
-
-### For Projects Using This Skill
-
-Simply tell Claude Code what you need:
-
-> "Generate figma-import.js for this project"
-
-Or trigger the skill directly with the slash command:
-
-> `/design-extractor`
-
-Claude Code reads the skill, scans your repo and delivers the script. No flags, no configuration needed.
-
-### For Customizing the Skill
-
-The skill works out of the box, but for best results you can calibrate it to your specific framework and styling approach. This is a one-time setup — just tell Claude Code:
-
-> "Run setup-extractor.md for this project"
-
-Claude Code will automatically:
-1. Scan your project (framework, styling, component structure)
-2. Write the results into `SKILL.md` as a "Local Project Formatting" section
-3. Use those rules for all future extractions — no further action needed
-
-**You don't edit anything manually.** The setup workflow handles it all.
-
----
-
-## What Gets Customized
-
-- **Framework** (React, Vue, Svelte, Next.js, SwiftUI, etc.)
-- **Styling approach** (Tailwind, CSS Modules, Styled Components, CSS-in-JS)
-- **Component folder structure** (where to scan for components)
-- **Code generation rules** (naming conventions, file format, output structure)
-
----
-
-## Key Features
-
-### Framework detection
-
-The skill identifies the stack by looking for known signals:
-
-| Signal | Framework |
-|--------|-----------|
-| `tailwind.config.js/ts` | Tailwind CSS |
-| `*.module.css`, `styles/` | CSS Modules |
-| `styled-components`, `emotion` | CSS-in-JS |
-| `tokens.js`, `theme.js`, `design-tokens.*` | Explicit token file |
-| `*.swift`, `Color+Extensions.swift` | SwiftUI |
-| `variables.css`, `:root { --` | CSS Custom Properties |
-
-### Token extraction (priority order)
-
-1. Explicit token file (`theme.js`, `tokens.json`) — read directly
-2. Tailwind config — `colors`, `fontFamily`, `fontSize`, `spacing`, `borderRadius`
-3. CSS custom properties — `:root { --color-primary: ... }`
-4. CSS-in-JS theme object
-5. Hardcoded values collected from component files
-
-### Component scanning
-
-Scans `components/`, `src/components/`, `ui/` and similar directories for React, SwiftUI and Vue primitives. Reads variant definitions from `cva()` / `tv()` calls, Storybook stories, and prop destructuring patterns to document all visual states.
-
-### Frame generation
-
-Reads every route in the app:
-- **Next.js App Router** — `app/**/page.tsx`
-- **Next.js Pages** — `pages/**/*.tsx`
-- **React Router** — `App.tsx` / `router.tsx`
-- **SwiftUI** — `*View.swift`
-- **HTML/CSS** — all `.html` files
-
-Maps Tailwind layout signals to Figma Auto Layout:
-
-| CSS / Tailwind | Figma |
-|----------------|-------|
-| `flex flex-col` | `layoutMode: VERTICAL` |
-| `flex flex-row` | `layoutMode: HORIZONTAL` |
-| `space-y-4` | `itemSpacing: 16` |
-| `p-6` | `padding: 24` all sides |
-| `px-4 py-2` | `paddingLeft/Right: 16`, `paddingTop/Bottom: 8` |
+The script creates:
+- Color styles from your tokens
+- Text styles from your typography scale
+- A **Components** page with every component and its variants
+- A **Frames** page with every route, at mobile and desktop sizes
 
 ### Supported frameworks
 
 | Framework | Tokens | Components | Frames |
-|-----------|--------|------------|--------|
-| Next.js + Tailwind | Automatic | Automatic | Automatic |
-| React + CSS Modules | Good | Good | Good |
-| HTML/CSS | CSS vars | Manual scan | Per `.html` file |
-| SwiftUI | Color extensions | Views | Scenes |
-| Vue | Automatic | Automatic | Automatic |
-| C++ / Qt | Manual | `.ui` files | Widget tree |
+|-----------|:------:|:----------:|:------:|
+| Next.js + Tailwind | ✅ | ✅ | ✅ |
+| React + CSS Modules | ✅ | ✅ | ✅ |
+| Vue | ✅ | ✅ | ✅ |
+| HTML/CSS | ✅ | — | ✅ |
+| SwiftUI | ✅ | ✅ | ✅ |
+| C++ / Qt | manual | `.ui` files | widget tree |
 
----
+### One-time setup (optional but recommended)
 
-## Business Logic
-
-### Figma free plan: 3-page hard limit
-
-Figma's free tier allows a maximum of 3 pages per file. A naive implementation that creates one page per route hits this limit immediately on any real app.
-
-The skill enforces a strict 2-page rule:
+For the best results on your specific project, run the setup workflow once. It teaches the skill your exact framework and file structure:
 
 ```
-Page 1: "🧩 Components"  → all components side by side
-Page 2: "📐 Frames"      → all page frames, desktop + mobile, positioned horizontally
+"Run setup-extractor.md for this project"
 ```
 
-Frames sit next to each other with an 80px gap — never on separate Figma pages. This constraint is baked into the generation rules and cannot be overridden.
+Claude Code will scan your repo and write a "Local Project Formatting" section into `SKILL.md`. Every future extraction uses those rules automatically. You don't touch anything manually.
 
-### lineHeight: no MULTIPLIER units
+### Testing it yourself
 
-Figma's plugin API rejects `{ unit: "MULTIPLIER" }` for text styles. The skill converts any multiplier-based line-height from the source code to `PERCENT` before writing to Figma:
+The repo ships with a minimal HTML/CSS fixture you can use to verify the skill before running it on your own project:
 
-```javascript
-// Source: lineHeight: 1.5
-// Output:
-style.lineHeight = { unit: "PERCENT", value: 150 };
-```
-
-### No placeholders — real values only
-
-Every color, spacing and font in the generated frames references the extracted tokens directly. Generic placeholder rectangles are prohibited.
-
----
-
-## Testing
-
-### Verify the skill works (2 minutes)
-
-The repo includes a minimal test fixture — a plain HTML/CSS project that covers every extraction path. Use it to confirm the skill is working correctly before running it on your own codebase.
-
-**Step 1 — Generate against the fixture:**
-```
-Ask Claude Code: "Generate figma-import.js for .claude/skills/design-extractor/tests/fixture/"
-```
-
-**Step 2 — Validate the output:**
 ```bash
+# Step 1 — Generate against the fixture
+# Ask Claude Code: "Generate figma-import.js for .claude/skills/design-extractor/tests/fixture/"
+
+# Step 2 — Validate the output
 bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js
-```
-Expected: all checks pass, exit 0.
 
-**Step 3 — Run in Figma and verify:**
-- Open Figma → Plugins → Development → Open Console
-- Paste `figma-import.js` → Enter
-- Expected result: 2 pages (`🧩 Components` and `📐 Frames`), 8 components, 4 frames (Home + Dashboard × Mobile + Desktop)
-
-See `tests/TESTING.md` for the full workflow including expected console output, framework coverage, and a debugging table.
-
-### Validate any generated script
-
-`validate.sh` can be run against any generated `figma-import.js` to catch known Figma API violations before you paste:
-
-```bash
-bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js
+# Step 3 — Paste into Figma
+# Expected: 2 pages, 8 components, 4 frames (Home + Dashboard × Mobile + Desktop)
 ```
 
-Checks for: wrong lineHeight units, async IIFEs, deprecated page setters, `figma.notify()` calls, unmapped system fonts, and more. Exit 0 = safe to paste.
+See `tests/TESTING.md` for the full workflow, expected console output, and a debugging table.
+
+### A few things worth knowing
+
+**Figma free plan limit** — Figma free allows 3 pages max. The skill enforces a strict 2-page layout (Components + Frames) so you never hit the wall, regardless of how many routes your app has.
+
+**No placeholders** — every value in the generated frames comes from your actual tokens. No generic rectangles, no hardcoded `#000000`.
+
+**Read-only** — the skill never modifies your source repo.
+
+**Transparent about gaps** — if something couldn't be extracted, `design-system-summary.md` says so explicitly.
 
 ---
 
-## The `extract.py` script
+---
 
-A standalone Python utility for pre-extracting tokens outside of Claude Code:
+## pen-to-figma
 
-```bash
-python .claude/skills/design-extractor/scripts/extract.py \
-  --repo /path/to/your/repo \
-  --output ./design-tokens.json \
-  --format tokens-studio \
-  --summary
+> Already designing in Pencil? This skill converts your `.pen` file into a paste-ready Figma script.
+
+**Status: experimental.** This skill is newer and less battle-tested than `design-extractor`. The happy path works well, but edge cases — deeply nested components, complex variable overrides, icon fonts — may need manual cleanup. Feedback welcome via [Issues](../../issues/new).
+
+### What it does
+
+1. Opens your `.pen` file via the Pencil MCP integration
+2. Reads all screens, components and design variables
+3. Resolves variable references to their real values
+4. Inlines component instances
+5. Generates a `figma-plugin.js` — paste it in Figma and your Pencil design appears
+
+### Requirements
+
+- [Pencil](https://pencil.di.fm) installed and the Pencil MCP server connected in Claude Code
+- A `.pen` file open in Pencil (or a file path you can provide)
+
+### Usage
+
+With a `.pen` file open in Pencil:
+
+```
+/pen-to-figma
 ```
 
-Outputs Tokens Studio JSON, raw CSS custom properties, or a plain object. The `--summary` flag prints a human-readable report of what was found.
+Or with a specific file or page:
+
+```
+/pen-to-figma path/to/my-design.pen
+/pen-to-figma — only the "Home" screen
+```
+
+Then paste `figma-plugin.js` into the Figma console, same as above.
+
+### What transfers
+
+| Element | Status |
+|---------|--------|
+| Frames and groups | ✅ |
+| Auto layout (flex) | ✅ |
+| Colors (hex + variables) | ✅ |
+| Typography | ✅ |
+| Corner radius | ✅ |
+| Shadows and effects | ✅ |
+| Component instances | ✅ (inlined) |
+| Icon fonts | partial |
+| Images | ✅ |
+
+### Known limitations
+
+- Very large files (50+ screens) may need to be converted screen by screen
+- Component instances are inlined, not linked to a Figma component library
+- Some Pencil-specific properties have no Figma equivalent and are silently skipped
 
 ---
 
-## Output
+---
 
-Every run delivers:
+## Skill file structure
 
-1. **`figma-import.js`** — the combined, ready-to-run script
-2. **`design-system-summary.md`** — what was extracted and any gaps flagged
-3. Three-line instructions for running the script in Figma
+```
+design-extractor/
+├── SKILL.md                  # main skill definition — extraction rules and Figma constraints
+├── setup-extractor.md        # one-time setup workflow for calibrating to your project
+├── references/               # detailed guides for patterns, templates, generation logic
+├── scripts/
+│   ├── extract.py            # standalone Python token extractor (no Claude needed)
+│   └── validate.sh           # validates a generated figma-import.js before you paste
+└── tests/
+    ├── fixture/              # minimal HTML/CSS project for end-to-end testing
+    └── TESTING.md            # full testing workflow and debugging table
+
+pen-to-figma/
+└── SKILL.md                  # skill definition — conversion rules and Figma API constraints
+```
 
 ---
 
-## Key principles
+## Key principles (both skills)
 
-- **Read-only** — never modifies the source repo
-- **Graceful assumptions** — uses technical values when semantic names are missing
-- **Transparent gaps** — explicitly flags what could not be extracted automatically
-- **Portable output** — the generated script has no dependency on the original repo
+- **Read-only** — neither skill modifies the source files
+- **Real values only** — no placeholder colors or lorem ipsum spacing
+- **Transparent about gaps** — explicit about what couldn't be converted automatically
+- **No dependencies** — the output script runs in the Figma console with no plugins, no npm, nothing extra
 
 ---
 
