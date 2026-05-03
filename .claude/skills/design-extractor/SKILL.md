@@ -199,8 +199,15 @@ Always deliver:
 
 ## Step 7: Self-validate before delivering
 
-Before writing `figma-import.js`, scan your own generated script against every critical rule.
-Do not deliver until all checks pass.
+After generating `figma-import.js`, run the validator:
+
+```bash
+bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js
+```
+
+If any checks fail: fix the script, re-run the validator. Do not deliver until exit code is 0.
+
+Use the checklist below as a fix guide when the validator reports a failure:
 
 ### Rule violations (instant fail — fix before delivering)
 

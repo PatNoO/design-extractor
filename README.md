@@ -72,10 +72,11 @@ Already designing in [Pencil](https://pencil.di.fm)? This skill reads your `.pen
 ## Quick start
 
 ```bash
-# 1. Copy the skills into your project
+# 1. Clone this repo and copy the skills into your project
+git clone https://github.com/PatNoO/design-extractor.git
 mkdir -p .claude/skills
-cp -r design-extractor .claude/skills/
-cp -r pen-to-figma .claude/skills/      # optional
+cp -r design-extractor/design-extractor .claude/skills/
+cp -r design-extractor/pen-to-figma .claude/skills/      # optional
 
 # 2. Open your project in Claude Code and ask:
 #    "Generate figma-import.js for this project"
@@ -87,8 +88,6 @@ cp -r pen-to-figma .claude/skills/      # optional
 ```
 
 That's it. No config files, no API keys, no plugins to install in Figma.
-
----
 
 ---
 
@@ -190,8 +189,6 @@ See `tests/TESTING.md` for the full workflow, expected console output, and a deb
 
 ---
 
----
-
 ## pen-to-figma
 
 > Already designing in Pencil? This skill converts your `.pen` file into a paste-ready Figma script.
@@ -242,13 +239,26 @@ Then paste `figma-plugin.js` into the Figma console, same as above.
 | Icon fonts | partial |
 | Images | ✅ |
 
+### Testing it yourself
+
+Before running the skill on a real file, verify everything is wired up:
+
+```bash
+# Step 1 — Run the full test suite (converter unit tests + end-to-end plugin tests)
+npm test
+# Expected: 84 tests pass across both layers
+
+# Step 2 — Confirm Pencil MCP is connected
+# Ask Claude Code to call get_editor_state — it should respond without error
+```
+
+See `pen-to-figma/health-check.md` for the full procedure, including what each test layer covers.
+
 ### Known limitations
 
 - Very large files (50+ screens) may need to be converted screen by screen
 - Component instances are inlined, not linked to a Figma component library
 - Some Pencil-specific properties have no Figma equivalent and are silently skipped
-
----
 
 ---
 
@@ -267,7 +277,16 @@ design-extractor/
     └── TESTING.md            # full testing workflow and debugging table
 
 pen-to-figma/
-└── SKILL.md                  # skill definition — conversion rules and Figma API constraints
+├── SKILL.md                  # skill definition — conversion rules and Figma API constraints
+└── health-check.md           # verify the skill is operational before using it on a real file
+
+converter/
+└── pen-to-figma.js           # conversion engine used by the pen-to-figma skill
+
+tests/
+├── converter.test.js         # 38 unit tests for the conversion engine
+├── run.js                    # 46 end-to-end tests against a generated Figma plugin
+└── figma-mock.js             # Figma API mock used by run.js
 ```
 
 ---

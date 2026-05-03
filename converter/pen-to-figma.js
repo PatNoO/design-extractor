@@ -387,7 +387,7 @@ for (const screen of screens) {
   if (frame) xOffset += (frame.width || 390) + 40;
 }
 figma.viewport.scrollAndZoomIntoView(figma.currentPage.children);
-console.log("✅ " + screens.length + " skärmar importerade!");
+console.log("✅ " + screens.length + " screen(s) imported!");
 `;
 
 // ─── Public API ────────────────────────────────────────────
