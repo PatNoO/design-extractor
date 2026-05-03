@@ -18,6 +18,26 @@ User types `/pen-to-figma` (optionally with a file path or page name).
 
 ## Steps to follow
 
+### Step 0 — Verify prerequisites
+
+Before starting, confirm the skill is operational:
+
+1. Check converter engine exists:
+   ```bash
+   ls converter/pen-to-figma.js
+   ```
+   If missing, the skill cannot generate output — stop and report.
+
+2. Run converter unit tests:
+   ```bash
+   node tests/converter.test.js
+   ```
+   All tests must pass before proceeding. If any fail, the engine is broken — report the failure and do not continue.
+
+3. Confirm Pencil MCP is reachable by calling `get_editor_state`. If it errors, the user needs to configure the Pencil MCP server first.
+
+---
+
 ### Step 1 — Find the pen file
 
 Call `get_editor_state` to check if a pen file is already open in Pencil.
@@ -92,6 +112,8 @@ Then call it (or replicate its logic inline) to produce the complete Figma scrip
 - Pass the page name (default: the pen file name without extension)
 
 Write the output to `figma-plugin.js` (or a name derived from the pen file, e.g. `MyApp-figma-plugin.js`).
+
+> The unit tests run in Step 0 already verified the engine produces valid scripts. No additional validation step is needed — the converter is deterministic given valid normalized input.
 
 ### Step 7 — Report to user
 
