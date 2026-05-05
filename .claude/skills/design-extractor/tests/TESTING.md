@@ -99,14 +99,39 @@ bash .claude/skills/design-extractor/scripts/validate.sh /tmp/clean.js
 
 ## Test 3: Framework coverage
 
-Run the skill against a real project for each framework type and validate:
+Each framework has a dedicated fixture in `tests/`. All fixtures use the same token values (primary `#2563EB`, surface `#F8FAFC`, etc.) so you can compare outputs directly.
 
-| Fixture type | What to verify |
-|---|---|
-| `tests/fixture/` (HTML/CSS) | CSS vars extracted as tokens, system-ui → Inter |
-| Next.js + Tailwind repo | `tailwind.config.*` colors used, not hardcoded |
-| SwiftUI repo | SF Pro mapped to Inter, comment present in script |
-| Vue + CSS vars repo | `:root` vars extracted as tokens |
+### How to run a fixture
+
+```
+Ask Claude Code: "Generate figma-import.js for the project at
+  .claude/skills/design-extractor/tests/<fixture-name>/"
+```
+
+Then validate: `bash .claude/skills/design-extractor/scripts/validate.sh figma-import.js`
+
+### Fixture reference
+
+| Fixture | Token source | Components | Screens | Key thing to verify |
+|---------|-------------|------------|---------|---------------------|
+| `fixture/` (HTML/CSS) | `styles.css` `:root` vars | Button (3), Card, Input, Badge | Home, Dashboard | CSS vars extracted, system-ui → Inter |
+| `nextjs-tailwind/` | `tailwind.config.js` theme | Button (3), Card, Badge | Home, Dashboard | Tailwind color keys used, not hardcoded hex |
+| `react-css-modules/` | `src/tokens.css` `:root` vars | Button (3), Card | Home, Dashboard | `.module.css` components scanned correctly |
+| `vue/` | `src/assets/variables.css` | AppButton (3), AppCard | HomeView, DashboardView | SFC `<style scoped>` tokens extracted |
+| `swiftui/` | `DesignSystem/Colors.swift` | AppButton (3), CardView | HomeView, DashboardView | SF Pro → Inter mapping present in output |
+| `kotlin-android/` | `res/values/colors.xml` + `dimens.xml` | MaterialButton, MaterialCardView | HomeActivity | ⚠️ Not yet supported — documents the gap |
+
+### Expected output per fixture
+
+Every fixture should produce:
+- **2 pages** in Figma: "🧩 Components" and "📐 Frames"
+- **2–4 components** on the Components page (Button variants count as one component with variants)
+- **4 frames** on the Frames page: Home Mobile (390px), Home Desktop (1440px), Dashboard Mobile (390px), Dashboard Desktop (1440px)
+- **Color styles** matching the token values in each fixture's token file
+
+### Kotlin/Android note
+
+The `kotlin-android/` fixture is intentionally unsupported — running the skill against it will expose what the skill currently does with Android XML resources. Use it to spec and test Kotlin support when adding it.
 
 ---
 
