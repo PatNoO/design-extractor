@@ -1,6 +1,6 @@
-import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
-import { Badge } from '@/components/Badge';
+import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { Badge } from '../components/Badge';
 
 export default function HomePage() {
   return (
