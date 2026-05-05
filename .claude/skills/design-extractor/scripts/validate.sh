@@ -62,7 +62,7 @@ fi
 # Greps for patterns that indicate actual font family usage, not comment references
 FONT_ERRORS=0
 for font in "SF Pro" "-apple-system" "BlinkMacSystemFont"; do
-  if grep -q "$font" "$FILE"; then
+  if grep -qF -- "$font" "$FILE"; then
     fail "Rule 5: system font '$font' found — map to Inter or Roboto"
     FONT_ERRORS=$((FONT_ERRORS + 1))
   fi

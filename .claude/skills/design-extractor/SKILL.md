@@ -60,6 +60,8 @@ Look at the file structure and determine:
 | `*.swift`, `Color+Extensions.swift` | SwiftUI |
 | `styles.ts` with export object | React Native |
 | `variables.css`, `:root { --` | CSS Custom Properties |
+| `res/values/colors.xml`, `res/values/dimens.xml` | Kotlin/Android (XML Views) |
+| `*.kt` + `res/layout/activity_*.xml` | Kotlin/Android (XML Views) |
 
 Always read these files if they exist:
 - `tailwind.config.*`
@@ -67,6 +69,7 @@ Always read these files if they exist:
 - `styles/globals.css` or `app/globals.css`
 - `src/styles/variables.*`
 - Any files named `colors`, `typography`, `spacing`
+- `res/values/colors.xml`, `res/values/dimens.xml`, `res/values/styles.xml` (Android)
 
 ---
 
@@ -76,8 +79,25 @@ Always read these files if they exist:
 1. **Explicit token file** (theme.js, tokens.json) → read directly
 2. **Tailwind config** → extract `colors`, `fontFamily`, `fontSize`, `spacing`, `borderRadius`
 3. **CSS Custom Properties** (`:root { --color-primary: ... }`) → parse variables
-4. **CSS-in-JS theme object** → extract theme structure
-5. **Hardcoded values** in components → collect unique values
+4. **Android XML resources** → parse `res/values/colors.xml`, `dimens.xml`, `styles.xml`
+5. **CSS-in-JS theme object** → extract theme structure
+6. **Hardcoded values** in components → collect unique values
+
+### Android XML token extraction
+
+When `res/values/colors.xml` is present:
+- Parse every `<color name="...">` tag → token name + hex value
+- Token name: strip `color_` prefix, camelCase the rest (e.g. `color_text_primary` → `textPrimary`)
+
+When `res/values/dimens.xml` is present:
+- `spacing_*` → spacing tokens (strip `dp` suffix, treat as px)
+- `radius_*` → border radius tokens
+- `font_size_*` → typography size tokens (strip `sp` suffix, treat as px)
+
+When `res/values/styles.xml` is present:
+- Resolve `TextAppearance.*` styles: read `android:textSize` and `android:fontFamily` / weight
+- Font weight: `sans-serif` = 400, `sans-serif-medium` = 500, `sans-serif-bold` = 700
+- Resolve `@dimen/` and `@color/` references inside style items using the values already extracted
 
 ### What to look for:
 
@@ -107,9 +127,25 @@ BREAKPOINTS:
 
 ## Step 3: Extract components
 
-Scan component files (`.tsx`, `.jsx`, `.vue`, `.swift`, `.html`) and document:
+Scan component files (`.tsx`, `.jsx`, `.vue`, `.swift`, `.html`, `res/layout/*.xml`) and document:
 
 For each component: name, variants, props that affect appearance, which tokens it uses.
+
+### Android XML component patterns
+
+When scanning `res/layout/component_*.xml`:
+
+| XML element | Figma component |
+|---|---|
+| `MaterialButton` | Button — read `android:backgroundTint` (fill), `app:cornerRadius` (radius), `android:textColor` (label color) |
+| `MaterialCardView` | Card — read `app:cardBackgroundColor`, `app:cardCornerRadius`, `app:strokeColor` |
+| `TextView` | Text node — resolve `android:textAppearance` via `styles.xml` for size + weight |
+| `MaterialToolbar` | Nav bar — read `android:background`, `android:height` |
+
+Resolve `@color/name` and `@dimen/name` references using the extracted token maps before setting values.
+For `android:backgroundTint="@color/color_primary"` → use `tokens.colors.primary`.
+
+Button variants: if only one layout file exists, infer secondary (transparent + stroke) and ghost (transparent, no stroke) from Material Design convention — note this as inferred in `design-system-summary.md`.
 
 Read the reference file for full guide:
 → `references/component-patterns.md`
@@ -125,6 +161,7 @@ Identify all routes and analyze their layouts.
 - **HTML**: scan all `.html` files
 - **SwiftUI**: scan all `*View.swift` files
 - **React Router**: read `App.tsx` / `router.tsx`
+- **Kotlin/Android**: scan `*Activity.kt` files — each Activity = one screen. Read its paired `res/layout/activity_*.xml` for layout structure. Mobile frame size: 390×844px.
 
 Read the reference file for full guide:
 → `references/frame-generator.md`
@@ -242,6 +279,7 @@ Only deliver once all boxes can be checked.
 | HTML/CSS | ✅ CSS vars | ✅ Manual scan | ✅ Per .html file |
 | SwiftUI | ⚠️ Color extensions | ✅ Views | ✅ Scenes |
 | Vue | ✅ Automatic | ✅ Automatic | ✅ Automatic |
+| Kotlin/Android (XML Views) | ✅ colors.xml + dimens.xml | ✅ Layout XML | ✅ Per Activity |
 | C++ / Qt | ⚠️ Manual | ⚠️ .ui files | ⚠️ Widget tree |
 
 Claude Code adapts the extraction per framework automatically.
