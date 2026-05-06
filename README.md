@@ -71,23 +71,27 @@ Already designing in [Pencil](https://pencil.di.fm)? This skill reads your `.pen
 
 ## Quick start
 
+**Run this one command from your project root** — it clones the repo, copies the skills into the right place, and cleans up after itself:
+
 ```bash
-# 1. Clone this repo and copy the skills into your project
-git clone https://github.com/PatNoO/design-extractor.git
-mkdir -p .claude/skills
-cp -r design-extractor/design-extractor .claude/skills/
-cp -r design-extractor/pen-to-figma .claude/skills/      # optional
-
-# 2. Open your project in Claude Code and ask:
-#    "Generate figma-import.js for this project"
-#    — or —
-#    "/pen-to-figma" (if you have a .pen file open in Pencil)
-
-# 3. Paste the output into Figma:
-#    Plugins → Development → Open Console → paste → Enter
+git clone https://github.com/PatNoO/design-extractor.git _de_tmp && \
+mkdir -p .claude/skills && \
+cp -r _de_tmp/.claude/skills/design-extractor .claude/skills/ && \
+cp -r _de_tmp/.claude/skills/pen-to-figma .claude/skills/ && \
+rm -rf _de_tmp
 ```
 
+Then open your project in Claude Code and ask:
+
+```
+Generate figma-import.js for this project
+```
+
+Finally, paste the output into Figma: **Plugins → Development → Open Console → paste → Enter**
+
 That's it. No config files, no API keys, no plugins to install in Figma.
+
+> **Note for Mac users:** The skills land in a hidden `.claude` folder. That's normal — you won't see it in Finder unless you press `Cmd + Shift + .`. The command above handles everything; you don't need to navigate there manually.
 
 ---
 
