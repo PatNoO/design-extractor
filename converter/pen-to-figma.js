@@ -156,7 +156,7 @@ const JUSTIFY = { start:"MIN", center:"CENTER", end:"MAX", space_between:"SPACE_
 const ALIGN   = { start:"MIN", center:"CENTER", end:"MAX" };
 
 function applyAutoLayout(node, d) {
-  const layout = d.layout || (d.gap || d.justifyContent || d.alignItems ? "horizontal" : null);
+  const layout = d.layout;
   if (!layout || layout === "none") return;
   node.layoutMode = layout.toUpperCase();
   // Figma resets sizing to HUG when layoutMode is set — re-assert FIXED so applyDynamicSizing can override
