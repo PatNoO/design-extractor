@@ -320,12 +320,12 @@ async function buildNode(d, parentNode, xOffsetOverride) {
     } else {
       txt.textAutoResize = "WIDTH_AND_HEIGHT";
     }
-    if (d.width === "fill_container" && parentNode && parentNode.layoutMode && parentNode.layoutMode !== "NONE") {
-      txt.layoutSizingHorizontal = "FILL";
-    }
     if (parentNode) {
       parentNode.appendChild(txt);
       applyPosition(txt, d, parentNode);
+      if (d.width === "fill_container" && parentNode.layoutMode && parentNode.layoutMode !== "NONE") {
+        txt.layoutSizingHorizontal = "FILL";
+      }
     }
     return txt;
 
